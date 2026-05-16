@@ -1,0 +1,10 @@
+pandas
+numpy
+lightgbm
+pyyaml
+requests
+matplotlib
+seaborn
+scikit-learn
+scipy
+wandb

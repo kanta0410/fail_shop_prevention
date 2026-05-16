@@ -1,0 +1,13 @@
+# プロジェクト設定ファイル
+
+data_paths:
+  raw: "data/raw"
+  processed: "data/processed"
+  output: "data/output"
+
+model_params:
+  objective: "binary"
+  metric: "auc"
+  learning_rate: 0.05
+  num_leaves: 31
+  scale_pos_weight: 20  # 不均衡データ対策
