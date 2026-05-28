@@ -23,12 +23,17 @@ interface Location {
   color: string;
   reasons_weak: string[];
   reasons_strong: string[];
+  features?: string[];
 }
 
 export default function Home() {
-  const [snsStrength, setSnsStrength] = useState<SnsStrength>('none');
-  const [businessType, setBusinessType] = useState('cafe');
-  const [purpose, setPurpose] = useState('none');
+  const [selectedSnsStrength, setSelectedSnsStrength] = useState<SnsStrength>('none');
+  const [selectedBusinessType, setSelectedBusinessType] = useState('cafe');
+  const [selectedPurpose, setSelectedPurpose] = useState('none');
+
+  const [appliedSnsStrength, setAppliedSnsStrength] = useState<SnsStrength>('none');
+  const [appliedBusinessType, setAppliedBusinessType] = useState('cafe');
+  const [appliedPurpose, setAppliedPurpose] = useState('none');
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
@@ -95,6 +100,9 @@ export default function Home() {
 
     // 疑似AIローディング (1.5秒)
     setTimeout(() => {
+      setAppliedBusinessType(selectedBusinessType);
+      setAppliedPurpose(selectedPurpose);
+      setAppliedSnsStrength(selectedSnsStrength);
       setIsAnalyzing(false);
       setHasAnalyzed(true);
     }, 1500);
@@ -183,7 +191,8 @@ export default function Home() {
       sns_strong_score,
       color,
       reasons_weak,
-      reasons_strong
+      reasons_strong,
+      features: ['周辺の人流密度', '交通アクセス']
     };
 
     const nextLocations = [...locations, newLocation];
@@ -192,16 +201,94 @@ export default function Home() {
 
   // 入力されたSNSの強さに応じてスコアをソート
   const rankedLocations = useMemo(() => {
-    const sorted = [...locations];
-    if (snsStrength === 'strong') {
-      sorted.sort((a, b) => b.sns_strong_score - a.sns_strong_score);
-    } else {
-      // none or weak
-      sorted.sort((a, b) => b.sns_weak_score - a.sns_weak_score);
-    }
-    // トップ3を返す
-    return sorted.slice(0, 3);
-  }, [snsStrength, locations]);
+    const scored = locations.map(loc => {
+      let score = appliedSnsStrength === 'strong' ? loc.sns_strong_score : loc.sns_weak_score;
+
+      // 来店目的による補正
+      if (appliedPurpose === 'destination') {
+        if (loc.color === 'red') score += 15;
+        if (loc.type === 'public') score += 10;
+      } else if (appliedPurpose === 'casual') {
+        if (loc.color === 'blue') score += 15;
+        if (loc.type === 'commercial' || loc.type === 'office') score += 10;
+        if (loc.station_dist < 150) score += 10;
+      }
+
+      // SNS集客力による補正
+      if (appliedSnsStrength === 'strong') {
+        if (loc.color === 'red') score += 20;
+      } else {
+        if (loc.color === 'blue') score += 15;
+      }
+
+      // 業態による補正
+      if (appliedBusinessType === 'bento') {
+        if (loc.type === 'office') score += 20;
+        if (loc.office_count > 60) score += 10;
+      } else if (appliedBusinessType === 'sweets') {
+        if (loc.type === 'commercial') score += 15;
+        if (loc.station_dist < 150) score += 10;
+      } else if (appliedBusinessType === 'specialty') {
+        if (loc.type === 'public' || loc.type === 'hybrid') score += 15;
+        if (loc.competitor_count < 30) score += 10;
+      } else if (appliedBusinessType === 'cafe' || appliedBusinessType === 'restaurant') {
+        if (loc.type === 'commercial' || loc.type === 'hybrid') score += 10;
+      } else if (appliedBusinessType === 'truck') {
+        if (loc.slots >= 2) score += 10;
+        if (loc.type === 'office' || loc.type === 'hybrid') score += 10;
+      }
+
+      return { ...loc, computedScore: score };
+    });
+
+    // スコア順にソート
+    scored.sort((a, b) => b.computedScore - a.computedScore);
+
+    // 動的に理由（判断基準）を生成して付与
+    return scored.slice(0, 3).map(loc => {
+      const reasons: string[] = [];
+
+      // 理由1: 業態と店舗タイプ（特徴量1）
+      if (appliedBusinessType === 'bento') {
+        reasons.push(`お弁当販売に最適な立地です。オフィスが集積するエリアであり、強力な判断基準である「${loc.features?.[0] || 'オフィス密集度'}」の恩恵を最大化して昼休みの高い需要を吸収できます。`);
+      } else if (appliedBusinessType === 'specialty') {
+        reasons.push(`こだわり専門店に相性の良い静かな環境です。「${loc.features?.[0] || '競合店舗数'}」が抑えられているため、競合に埋もれず独自の強いブランド価値をアピールする出店が可能です。`);
+      } else if (appliedBusinessType === 'sweets') {
+        reasons.push(`テイクアウトスイーツに適した動線です。主な判断基準である「${loc.features?.[0] || '歩行者通行量'}」が非常に高く、通行人の視線を引きやすいため、手軽な衝動買いを誘発できます。`);
+      } else {
+        reasons.push(`本業態に適合する立地特性を持っています。このエリアの主な強みである「${loc.features?.[0] || '立地ポテンシャル'}」を活かして、無駄のない店舗認知とスムーズな集客が期待できます。`);
+      }
+
+      // 理由2: 来店目的と店舗タイプ（特徴量2）
+      if (appliedPurpose === 'destination') {
+        reasons.push(`「わざわざ行く」目的来店に適した落ち着いたエリアです。駅近の一等地に拘らず「${loc.features?.[1] || '駅から距離'}」がある分、家賃コストを低く抑え、隠れ家的な演出でリピーターを獲得できます。`);
+      } else if (appliedPurpose === 'casual') {
+        reasons.push(`「フラッと立ち寄る」日常利用に絶好の環境です。主要な判断基準である「${loc.features?.[1] || '駅から距離'}」が近くアクセス性に優れるため、移動中のついで買いやフリー客を自然に呼び込めます。`);
+      } else {
+        reasons.push(`日常利用と週末の目的利用の双方に対応できる中立的なエリアです。バランスの取れた「${loc.features?.[1] || '地域環境'}」を背景に、安定した営業の基盤を築くことができます。`);
+      }
+
+      // 理由3: SNS集客力と立地特性
+      if (appliedSnsStrength === 'strong') {
+        if (loc.color === 'red') {
+          reasons.push(`強固なSNS集客力を活かせるエリアです。人通りは少ないニッチな場所（注意エリア）ですが、ネット上の話題性で「知る人ぞ知る名店」としてファンを直接誘導できる好相性な立地です。`);
+        } else {
+          reasons.push(`強い情報発信力と好立地の相乗効果が狙えます。視認性が高くおすすめの場所（安全地帯）であるため、SNS拡散とリアルの通行客の双方からアプローチして爆発的な回転率を生み出せます。`);
+        }
+      } else {
+        if (loc.color === 'blue') {
+          reasons.push(`SNS発信に頼らなくとも安定する安全地帯です。エリア自体の自然な通行量と好立地ポテンシャルがカバーするため、店頭の工夫（看板やメニュー看板など）だけで確実な集客が望めます。`);
+         } else {
+          reasons.push(`SNSが弱い段階ではフリー客と地域密着のアナログアプローチが主軸となります。立地的な不利を補うため、まずは周辺 of オフィスや住民への地道なポスティングや認知作りが重要となります。`);
+        }
+      }
+
+      return {
+        ...loc,
+        computedReasons: reasons
+      };
+    });
+  }, [locations, appliedBusinessType, appliedPurpose, appliedSnsStrength]);
 
   return (
     <div className="container">
@@ -211,7 +298,7 @@ export default function Home() {
         <h2>出店条件を入力</h2>
         <div className="form-group">
           <label>出店する業態</label>
-          <select value={businessType} onChange={(e) => setBusinessType(e.target.value)}>
+          <select value={selectedBusinessType} onChange={(e) => setSelectedBusinessType(e.target.value)}>
             <option value="cafe">カフェ・軽食</option>
             <option value="sweets">スイーツ・テイクアウト専門</option>
             <option value="bento">お弁当・惣菜（ランチ特化）</option>
@@ -224,7 +311,7 @@ export default function Home() {
 
         <div className="form-group">
           <label>主な来店目的</label>
-          <select value={purpose} onChange={(e) => setPurpose(e.target.value)}>
+          <select value={selectedPurpose} onChange={(e) => setSelectedPurpose(e.target.value)}>
             <option value="none">指定しない / どちらでも</option>
             <option value="casual">フラッと寄り（通りすがり）</option>
             <option value="destination">目的来店（わざわざ来る）</option>
@@ -233,7 +320,7 @@ export default function Home() {
 
         <div className="form-group">
           <label>現在のSNS集客力（任意）</label>
-          <select value={snsStrength} onChange={(e) => setSnsStrength(e.target.value as SnsStrength)}>
+          <select value={selectedSnsStrength} onChange={(e) => setSelectedSnsStrength(e.target.value as SnsStrength)}>
             <option value="none">指定しない / まだない</option>
             <option value="weak">フォロワーが少ない（受動的集客メイン）</option>
             <option value="strong">フォロワーが多い（能動的集客が可能）</option>
@@ -269,7 +356,7 @@ export default function Home() {
           <div className="card">
             <h2>🏆 おすすめ出店場所 トップ3</h2>
             {rankedLocations.map((loc, index) => {
-              const reasons = snsStrength === 'strong' ? loc.reasons_strong : loc.reasons_weak;
+              const reasons = loc.computedReasons;
               return (
                 <div key={loc.id} className="ranking-item">
                   <div className="ranking-header">
