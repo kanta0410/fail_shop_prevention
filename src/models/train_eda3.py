@@ -239,10 +239,12 @@ def main():
     print("\n============================================================")
     print("Final evaluation on TEST set (EDA3)...")
     test_results = []
+    y_test_preds = {}
     
     for name, res in results.items():
         model = res['model']
         y_test_pred = model.predict_proba(X_test_scaled)[:, 1]
+        y_test_preds[name] = y_test_pred
         
         auc = roc_auc_score(y_test, y_test_pred)
         pr = average_precision_score(y_test, y_test_pred)
@@ -256,6 +258,40 @@ def main():
             plot_shap(model, X_test_scaled, name)
             
     pd.DataFrame(test_results).to_csv(os.path.join(OUTPUT_DIR, 'test_metrics_eda3.csv'), index=False)
+    
+    # --- PR曲線とROC曲線のプロット ---
+    print("\nPlotting PR and ROC curves...")
+    # 1. PR曲線
+    plt.figure(figsize=(8, 6))
+    for name, y_pred in y_test_preds.items():
+        precision, recall, _ = precision_recall_curve(y_test, y_pred)
+        ap = average_precision_score(y_test, y_pred)
+        plt.plot(recall, precision, label=f'{name} (AP = {ap:.4f})')
+    baseline = y_test.sum() / len(y_test)
+    plt.axhline(y=baseline, color='gray', linestyle='--', label=f'Baseline (ratio = {baseline:.4f})')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve (Test Set - EDA3)')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(OUTPUT_DIR, 'pr_curve_eda3.png'), dpi=150)
+    plt.close()
+
+    # 2. ROC曲線
+    plt.figure(figsize=(8, 6))
+    for name, y_pred in y_test_preds.items():
+        fpr, tpr, _ = roc_curve(y_test, y_pred)
+        auc_score = roc_auc_score(y_test, y_pred)
+        plt.plot(fpr, tpr, label=f'{name} (AUC = {auc_score:.4f})')
+    plt.plot([0, 1], [0, 1], color='gray', linestyle='--', label='Random (AUC = 0.5000)')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve (Test Set - EDA3)')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(OUTPUT_DIR, 'roc_curve_eda3.png'), dpi=150)
+    plt.close()
+    print("Saved PR Curve and ROC Curve plots.")
     
     print("\n============================================================")
     print("All steps completed successfully in EDA3 module!")
