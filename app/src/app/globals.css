@@ -142,3 +142,59 @@ h1 {
   left: -20px;
   color: #2ecc71;
 }
+
+/* マップのラッパー (レスポンシブ対応用) */
+.map-wrapper {
+  height: 400px;
+  width: 100%;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* スマホ向けのレスポンシブデザイン */
+@media (max-width: 600px) {
+  .container {
+    padding: 10px;
+  }
+  
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+  
+  h2 {
+    font-size: 1.2rem;
+  }
+
+  .card {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  /* タップエリアの拡大 */
+  .form-group select,
+  .form-group input,
+  .btn {
+    min-height: 48px; 
+    font-size: 16px; /* スマホでのズーム防止 */
+  }
+
+  .btn {
+    padding: 14px;
+  }
+
+  .map-wrapper {
+    height: 300px; /* スマホでは高さを少し抑える */
+    margin-bottom: 15px;
+  }
+
+  .reasons-list {
+    padding-left: 30px;
+  }
+
+  .ranking-header h3 {
+    font-size: 1.1rem;
+  }
+}

@@ -310,7 +310,7 @@ export default function Home() {
         </div>
 
         <div className="form-group">
-          <label>主な来店目的</label>
+          <label>主な来店目的（任意）</label>
           <select value={selectedPurpose} onChange={(e) => setSelectedPurpose(e.target.value)}>
             <option value="none">指定しない / どちらでも</option>
             <option value="casual">フラッと寄り（通りすがり）</option>
@@ -343,18 +343,18 @@ export default function Home() {
         <>
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-              <h2 style={{ margin: 0 }}>🗺️ 出店ポテンシャルマップ</h2>
+              <h2 style={{ margin: 0 }}> 出店ポテンシャルマップ</h2>
             </div>
             <p style={{ marginBottom: '15px', color: '#555', fontSize: '0.9rem' }}>
               ※星(★)は自治体等が認める出店可能エリアです。<br />
               ※青色は現在のあなたの条件での「安全地帯(おすすめ)」、赤色は「注意(ニッチ向け)」を示します。<br />
               <strong>💡 地図上の開いている場所をクリックすると、その場所を新しい候補地として登録できます！</strong>
             </p>
-            {isMounted && <Map locations={locations} onAddLocation={handleAddLocation} />}
+            {isMounted && <Map locations={locations} topRankedIds={rankedLocations.map(loc => loc.id)} onAddLocation={handleAddLocation} />}
           </div>
 
           <div className="card">
-            <h2>🏆 おすすめ出店場所 トップ3</h2>
+            <h2> おすすめ出店場所 トップ3</h2>
             {rankedLocations.map((loc, index) => {
               const reasons = loc.computedReasons;
               return (

@@ -25,6 +25,7 @@ interface Location {
 
 interface MapProps {
   locations: Location[];
+  topRankedIds?: number[];
   onAddLocation?: (name: string, lat: number, lng: number) => void;
 }
 
@@ -37,7 +38,7 @@ function MapEventsHelper({ onMapClick }: { onMapClick: (lat: number, lng: number
   return null;
 }
 
-export default function Map({ locations, onAddLocation }: MapProps) {
+export default function Map({ locations, topRankedIds, onAddLocation }: MapProps) {
   // 名古屋の中心付近
   const center: [number, number] = [35.1706, 136.9034];
   
@@ -66,7 +67,7 @@ export default function Map({ locations, onAddLocation }: MapProps) {
   };
 
   return (
-    <div style={{ height: '400px', width: '100%', marginBottom: '20px', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+    <div className="map-wrapper">
       <MapContainer center={center} zoom={14} style={{ height: '100%', width: '100%' }}>
         {/* 薄めのベースマップ（CartoDB Positron）を使用してヒートマップ風の演出をサポート */}
         <TileLayer
@@ -98,14 +99,11 @@ export default function Map({ locations, onAddLocation }: MapProps) {
               radius={12}
               pathOptions={{ 
                 fillColor: loc.color === 'blue' ? '#3498db' : '#e74c3c', 
-                color: 'white',
-                weight: 2,
+                color: topRankedIds?.includes(loc.id) ? '#ffeb3b' : 'white',
+                weight: topRankedIds?.includes(loc.id) ? 4 : 2,
                 fillOpacity: 0.8
               }}
             >
-              <Tooltip permanent direction="top" opacity={0.9} offset={[0, -10]}>
-                <span style={{ fontSize: '16px' }}>★</span>
-              </Tooltip>
               <Popup>
                 <strong>{loc.name}</strong><br />
                 {loc.features && loc.features.length > 0 && (
