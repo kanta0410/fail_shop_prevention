@@ -299,13 +299,12 @@ export default function Home() {
         <div className="form-group">
           <label>出店する業態</label>
           <select value={selectedBusinessType} onChange={(e) => setSelectedBusinessType(e.target.value)}>
-            <option value="cafe">カフェ・軽食</option>
-            <option value="sweets">スイーツ・テイクアウト専門</option>
-            <option value="bento">お弁当・惣菜（ランチ特化）</option>
-            <option value="restaurant">レストラン（しっかり食事）</option>
-            <option value="specialty">こだわり専門店（自家焙煎珈琲など）</option>
-            <option value="truck">キッチンカー・移動販売</option>
-            <option value="other">その他・多国籍</option>
+            <option value="cafe">カフェ・軽食系</option>
+            <option value="sweets">スイーツ・テイクアウト専門系</option>
+            <option value="bento">お弁当・惣菜（ランチ特化）系</option>
+            <option value="restaurant">レストラン（しっかり食事）系</option>
+            <option value="specialty">こだわり専門店（自家焙煎珈琲など）系</option>
+            <option value="other">その他・多国籍系</option>
           </select>
         </div>
 
@@ -346,7 +345,6 @@ export default function Home() {
               <h2 style={{ margin: 0 }}> 出店ポテンシャルマップ</h2>
             </div>
             <p style={{ marginBottom: '15px', color: '#555', fontSize: '0.9rem' }}>
-              ※星(★)は自治体等が認める出店可能エリアです。<br />
               ※青色は現在のあなたの条件での「安全地帯(おすすめ)」、赤色は「注意(ニッチ向け)」を示します。<br />
               <strong>💡 地図上の開いている場所をクリックすると、その場所を新しい候補地として登録できます！</strong>
             </p>
